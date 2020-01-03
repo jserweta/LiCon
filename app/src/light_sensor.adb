@@ -2,6 +2,7 @@
 
 with Ada.Text_IO, Ada.Numerics.Float_Random, Ada.Numerics.Elementary_Functions;
 use Ada.Text_IO, Ada.Numerics.Float_Random;
+with Ada.Containers.Vectors;
 
 
 procedure Light_sensor is
@@ -14,7 +15,9 @@ type Point is
  
 type Point_Ptr is access all Point;
 
-task type Klient;
+task type Klient is
+    entry Is_Alive(Working: out Boolean);
+end Klient;
 type K_Ptr is access Klient;
 
 task Serwer is 
@@ -27,15 +30,19 @@ task body Klient is
 A,B : Float;
 Gen: Generator;
 P : Point_Ptr;
+Working : Boolean;
 begin
   loop
-	A := Random(Gen);
-	B := Random(Gen);
-	P := new Point;
-	P.A := A;
-	P.B := B;
-	Serwer.We(P);
-    delay(0.5);
+    accept Is_Alive(Working: out Boolean) do
+        A := Random(Gen);
+	    B := Random(Gen);
+	    P := new Point;
+	    P.A := A;
+	    P.B := B;
+	    Serwer.We(P);
+        Working := True;
+    end Is_Alive;
+
   end loop;
 end Klient;
 
@@ -66,16 +73,28 @@ begin
   Put_Line("Koniec Serwer ");
 end Serwer;
 
-type SensorArray is array (Positive range <>) of K_Ptr;
-lightSensor : SensorArray (1 .. 10);
+package Light_Vector is new Ada.Containers.Vectors
+    (Index_Type => Natural, Element_Type => K_Ptr);
+
+use Light_Vector;
+
+Sensors: Vector;
+
+work : Boolean:= False;
 
 begin
     Serwer.Start;
     for I in Integer range 1 .. 10 loop
-        lightsensor(I) := new Klient;
-        delay (6.0);
+        Sensors.Append(new Klient);
         Put_Line("Ink"); 
     end loop; 
+    loop
+        for P of Sensors loop
+            P.Is_Alive(work);
+            Put_Line("Working: " & work'Img);
+            work := False;
+        end loop;
+    end loop;
     Put_Line("Koniec_PG "); 
 end Light_sensor;
 	  	
