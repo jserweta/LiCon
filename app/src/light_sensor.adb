@@ -90,25 +90,31 @@ use Id_Vector;
 Taken_Id: Id_Vector.Vector;
 
 work : Boolean:= False;
-Id: Natural;
-klik: K_Ptr;
+
    
-begin
-    Serwer.Start;
-    for I in Integer range 1 .. 10 loop
-        Id := 1;
+procedure Add_Sensor(A: in out Light_Vector.Vector; B: in out Id_Vector.Vector) is
+ 	Id: Natural;
+	klik: K_Ptr;
+	begin
+	Id := 1;
 		loop
         if not Taken_Id.Contains(Id) then
             klik := new Klient;
             klik.Init(Id);
-			Taken_Id.Append(Id);
-            Sensors.Append(klik);
+			B.Append(Id);
+            A.Append(klik);
             exit;
         else  
             Id := Id + 1;  
         end if;
 		Put_Line(Id'Img);
     	end loop;
+end Add_Sensor;
+
+begin
+    Serwer.Start;
+    for I in Integer range 1 .. 10 loop
+		Add_Sensor(Sensors, Taken_Id);
     end loop; 
     loop
         for P of Sensors loop
