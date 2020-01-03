@@ -16,6 +16,7 @@ type Point is
 type Point_Ptr is access all Point;
 
 task type Klient is
+    entry Init(Id_in : in Natural);
     entry Is_Alive(Working: out Boolean);
 end Klient;
 type K_Ptr is access Klient;
@@ -31,8 +32,12 @@ A,B : Float;
 Gen: Generator;
 P : Point_Ptr;
 Working : Boolean;
+Id : Natural := 0;
 begin
   loop
+    accept Init(Id_in : in Natural) do
+		Id := Id_in;
+	end Init;
     accept Is_Alive(Working: out Boolean) do
         A := Random(Gen);
 	    B := Random(Gen);
@@ -41,6 +46,7 @@ begin
 	    P.B := B;
 	    Serwer.We(P);
         Working := True;
+		Put_Line(Id'Img);
     end Is_Alive;
 
   end loop;
@@ -57,12 +63,12 @@ begin
 		 Pvs := Lok;
 	     Lok := P;
      end We;
-	    Put_Line("A=" & Lok.A'Img & " B=" & Lok.B'Img);
+	    --Put_Line("A=" & Lok.A'Img & " B=" & Lok.B'Img);
 		dist := Ada.Numerics.Elementary_Functions.Sqrt(Lok.A**2+Lok.B**2);
-	    Put_Line("Distance from 0.0: " & dist'Img);
+	    --Put_Line("Distance from 0.0: " & dist'Img);
 		if Pvs /= Null then 
 			dist := Ada.Numerics.Elementary_Functions.Sqrt((Lok.A-Pvs.A)**2+(Lok.B-Pvs.B)**2);
-			Put_Line("Distance from previous point: " & dist'Img);
+			--Put_Line("Distance from previous point: " & dist'Img);
 		end if;
     or 
 	   accept Koniec;
@@ -75,18 +81,34 @@ end Serwer;
 
 package Light_Vector is new Ada.Containers.Vectors
     (Index_Type => Natural, Element_Type => K_Ptr);
-
 use Light_Vector;
+Sensors: Light_Vector.Vector;
 
-Sensors: Vector;
+package Id_Vector is new Ada.Containers.Vectors
+    (Index_Type => Natural, Element_Type => Natural);
+use Id_Vector;
+Taken_Id: Id_Vector.Vector;
 
 work : Boolean:= False;
-
+Id: Natural;
+klik: K_Ptr;
+   
 begin
     Serwer.Start;
     for I in Integer range 1 .. 10 loop
-        Sensors.Append(new Klient);
-        Put_Line("Ink"); 
+        Id := 1;
+		loop
+        if not Taken_Id.Contains(Id) then
+            klik := new Klient;
+            klik.Init(Id);
+			Taken_Id.Append(Id);
+            Sensors.Append(klik);
+            exit;
+        else  
+            Id := Id + 1;  
+        end if;
+		Put_Line(Id'Img);
+    	end loop;
     end loop; 
     loop
         for P of Sensors loop
