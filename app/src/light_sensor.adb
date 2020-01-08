@@ -7,80 +7,21 @@ with Ada.Containers.Vectors;
 
 procedure Light_sensor is
 	
-type Point is
+subtype light_range is Float range 0.0..100.0;	
+	
+type Light_Sensor_Data is
 	record 
-	    A : Float := 0.0;
-  		B : float := 0.0;
+	    Id : Natural;
+  		Light_Level: light_range := 0.0;
   	end record; 
  
-type Point_Ptr is access all Point;
+type LSD_Ptr is access all Light_Sensor_Data;
 
-task type Klient is
-    entry Init(Id_in : in Natural);
-    entry Is_Alive(Working: out Boolean);
-end Klient;
-type K_Ptr is access Klient;
-
-task Serwer is 
-  	entry Start;
-  	entry Koniec;
-  	entry We(P:Point_Ptr);
-end Serwer;
-
-task body Klient is
-A,B : Float;
-Gen: Generator;
-P : Point_Ptr;
-Working : Boolean;
-Id : Natural := 0;
-begin
-  loop
-    accept Init(Id_in : in Natural) do
-		Id := Id_in;
-	end Init;
-    accept Is_Alive(Working: out Boolean) do
-        A := Random(Gen);
-	    B := Random(Gen);
-	    P := new Point;
-	    P.A := A;
-	    P.B := B;
-	    Serwer.We(P);
-        Working := True;
-		Put_Line(Id'Img);
-    end Is_Alive;
-
-  end loop;
-end Klient;
-
-task body Serwer is
-  Lok, Pvs: Point_Ptr; 
-  dist : Float;
-begin
-  accept Start;
-  loop
-    select 
-     accept We(P: in Point_Ptr) do
-		 Pvs := Lok;
-	     Lok := P;
-     end We;
-	    --Put_Line("A=" & Lok.A'Img & " B=" & Lok.B'Img);
-		dist := Ada.Numerics.Elementary_Functions.Sqrt(Lok.A**2+Lok.B**2);
-	    --Put_Line("Distance from 0.0: " & dist'Img);
-		if Pvs /= Null then 
-			dist := Ada.Numerics.Elementary_Functions.Sqrt((Lok.A-Pvs.A)**2+(Lok.B-Pvs.B)**2);
-			--Put_Line("Distance from previous point: " & dist'Img);
-		end if;
-    or 
-	   accept Koniec;
- 	   exit;
-    end select;
-  end loop;
-  
-  Put_Line("Koniec Serwer ");
-end Serwer;
+task type Light_Sensor (Id : Natural);
+type Light_Sensor_Ptr is access Light_Sensor;
 
 package Light_Vector is new Ada.Containers.Vectors
-    (Index_Type => Natural, Element_Type => K_Ptr);
+    (Index_Type => Natural, Element_Type => Light_Sensor_Ptr);
 use Light_Vector;
 Sensors: Light_Vector.Vector;
 
@@ -91,16 +32,64 @@ Taken_Id: Id_Vector.Vector;
 
 work : Boolean:= False;
 
+task Serwer is 
+  	entry Start;
+  	entry Koniec;
+  	entry We(P:LSD_Ptr);
+end Serwer;
+
+task body Light_Sensor is
+Light_Level : light_range;
+Gen: Generator;
+P : LSD_Ptr;
+Working : Boolean;
+begin
+  loop
+	Light_Level := Random(Gen) * 100.0;
+	P := new Light_Sensor_Data;
+    P.Id := Id;
+    P.Light_Level := Light_Level;
+    Serwer.We(P);
+    Working := True;
+	delay(10.0);
+  end loop;
+end Light_Sensor;
+
+task body Serwer is
+  Lok, Pvs: LSD_Ptr; 
+  dist : Float;
+begin
+  accept Start;
+  loop
+    select 
+     accept We(P: in LSD_Ptr) do
+	     Lok := P;
+     end We;
+	    --Put_Line("A=" & Lok.A'Img & " B=" & Lok.B'Img);
+		--dist := Ada.Numerics.Elementary_Functions.Sqrt(Lok.A**2+Lok.B**2);
+	    --Put_Line("Distance from 0.0: " & dist'Img);
+		if Lok /= Null then 
+			--dist := Ada.Numerics.Elementary_Functions.Sqrt((Lok.A-Pvs.A)**2+(Lok.B-Pvs.B)**2);
+			Put_Line("Distance from previous point: " & Lok.Id'Img);
+		end if;
+    or 
+	   accept Koniec;
+ 	   exit;
+    end select;
+  end loop;
+  
+  Put_Line("Koniec Serwer ");
+end Serwer;
+
    
 procedure Add_Sensor(A: in out Light_Vector.Vector; B: in out Id_Vector.Vector) is
  	Id: Natural;
-	klik: K_Ptr;
+	klik: Light_Sensor_Ptr;
 	begin
 	Id := 1;
 		loop
         if not Taken_Id.Contains(Id) then
-            klik := new Klient;
-            klik.Init(Id);
+            klik := new Light_Sensor(Id);
 			B.Append(Id);
             A.Append(klik);
             exit;
@@ -116,13 +105,6 @@ begin
     for I in Integer range 1 .. 10 loop
 		Add_Sensor(Sensors, Taken_Id);
     end loop; 
-    loop
-        for P of Sensors loop
-            P.Is_Alive(work);
-            Put_Line("Working: " & work'Img);
-            work := False;
-        end loop;
-    end loop;
     Put_Line("Koniec_PG "); 
 end Light_sensor;
 	  	
