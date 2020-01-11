@@ -16,19 +16,25 @@ P : LSD_Ptr;
 Working : Boolean;
 begin
   loop
-	Light_Level := Random(Gen) * 100.0;
-	P := new Light_Sensor_Data;
-    P.Id := Id;
-    P.Light_Level := Light_Level;
-    Serwer.We(P);
-    Working := True;
-	delay(10.0);
+	select
+		accept Stop;
+		exit;
+	else
+		Light_Level := Random(Gen) * 100.0;
+		P := new Light_Sensor_Data;
+    	P.Id := Id;
+    	P.Light_Level := Light_Level;
+    	Serwer.We(P);
+    	Working := True;
+		delay(5.0);
+		end select;
   end loop;
 end Light_Sensor;
 
 task body Serwer is
   Lok, Pvs: LSD_Ptr; 
   dist : Float;
+	counter: Integer := 0;
 begin
   accept Start;
   loop
@@ -42,6 +48,11 @@ begin
 		if Lok /= Null then 
 			--dist := Ada.Numerics.Elementary_Functions.Sqrt((Lok.A-Pvs.A)**2+(Lok.B-Pvs.B)**2);
 			Put_Line("Distance from previous point: " & Lok.Id'Img);
+			counter := counter + 1;
+		end if;
+		if counter = 10 then 
+			Put_Line("Ten: " & Lok.Id'Img);
+			counter := 0;
 		end if;
     or 
 	   accept Koniec;
@@ -53,7 +64,7 @@ begin
 end Serwer;
 
    
-procedure Add_Sensor(A: in out Light_Vector.Vector; B: in out Id_Vector.Vector) is
+procedure Add_Sensor is
  	Id: Natural;
 	klik: Light_Sensor_Ptr;
 	begin
@@ -61,8 +72,8 @@ procedure Add_Sensor(A: in out Light_Vector.Vector; B: in out Id_Vector.Vector) 
 		loop
         if not Taken_Id.Contains(Id) then
             klik := new Light_Sensor(Id);
-			B.Append(Id);
-            A.Append(klik);
+			Taken_Id.Append(Id);
+            Sensors.Append(klik);
             exit;
         else  
             Id := Id + 1;  
@@ -71,12 +82,25 @@ procedure Add_Sensor(A: in out Light_Vector.Vector; B: in out Id_Vector.Vector) 
     	end loop;
 end Add_Sensor;
 
-procedure Run is
+procedure Remove_Sensor(Id: in Natural) is
+	klik: Light_Sensor_Ptr;
+	E: Integer;
+	begin
+	if Taken_Id.Contains(Id) then
+		E := Taken_Id.Find_Index(Id);
+		Put_Line("Now deleting" & Id'Img);
+		klik := Sensors(E);
+		Taken_Id.Delete(E,1);
+		Sensors.Delete(E,1);
+		klik.Stop;
+	end if;
+end Remove_Sensor;
 
+procedure Run is
 begin
     Serwer.Start;
     for I in Integer range 1 .. 10 loop
-		Add_Sensor(Sensors, Taken_Id);
+		Add_Sensor;
     end loop; 
     Put_Line("Koniec_PG "); 
 

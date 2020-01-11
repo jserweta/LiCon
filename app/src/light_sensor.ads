@@ -1,4 +1,5 @@
 with Ada.Containers.Vectors;
+with Ada.Unchecked_Deallocation;
 
 package Light_Sensor is
 
@@ -12,7 +13,10 @@ type Light_Sensor_Data is
  
 type LSD_Ptr is access all Light_Sensor_Data;
 
-task type Light_Sensor (Id : Natural);
+task type Light_Sensor (Id : Natural) is
+	entry Stop;
+end Light_Sensor;
+
 type Light_Sensor_Ptr is access Light_Sensor;
 
 package Light_Vector is new Ada.Containers.Vectors
@@ -31,7 +35,9 @@ task Serwer is
   	entry We(P:LSD_Ptr);
 end Serwer;
 
-procedure Add_Sensor(A: in out Light_Vector.Vector; B: in out Id_Vector.Vector);
+procedure Add_Sensor;
+
+procedure Remove_Sensor(Id: in Natural);
 
 procedure Run;
 
