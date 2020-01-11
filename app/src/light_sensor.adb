@@ -5,38 +5,9 @@ use Ada.Text_IO, Ada.Numerics.Float_Random;
 with Ada.Containers.Vectors;
 
 
-procedure Light_sensor is
-	
-subtype light_range is Float range 0.0..100.0;	
-	
-type Light_Sensor_Data is
-	record 
-	    Id : Natural;
-  		Light_Level: light_range := 0.0;
-  	end record; 
- 
-type LSD_Ptr is access all Light_Sensor_Data;
-
-task type Light_Sensor (Id : Natural);
-type Light_Sensor_Ptr is access Light_Sensor;
-
-package Light_Vector is new Ada.Containers.Vectors
-    (Index_Type => Natural, Element_Type => Light_Sensor_Ptr);
-use Light_Vector;
-Sensors: Light_Vector.Vector;
-
-package Id_Vector is new Ada.Containers.Vectors
-    (Index_Type => Natural, Element_Type => Natural);
-use Id_Vector;
-Taken_Id: Id_Vector.Vector;
-
+package body Light_sensor is
+		
 work : Boolean:= False;
-
-task Serwer is 
-  	entry Start;
-  	entry Koniec;
-  	entry We(P:LSD_Ptr);
-end Serwer;
 
 task body Light_Sensor is
 Light_Level : light_range;
@@ -100,11 +71,15 @@ procedure Add_Sensor(A: in out Light_Vector.Vector; B: in out Id_Vector.Vector) 
     	end loop;
 end Add_Sensor;
 
+procedure Run is
+
 begin
     Serwer.Start;
     for I in Integer range 1 .. 10 loop
 		Add_Sensor(Sensors, Taken_Id);
     end loop; 
     Put_Line("Koniec_PG "); 
+
+end Run;
 end Light_sensor;
 	  	
