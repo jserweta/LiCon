@@ -1,5 +1,4 @@
 with Ada.Containers.Vectors;
-with Ada.Unchecked_Deallocation;
 
 package Light_Sensor is
 
@@ -29,15 +28,22 @@ package Id_Vector is new Ada.Containers.Vectors
 use Id_Vector;
 Taken_Id: Id_Vector.Vector;
 
+package Solar_Power_Vector is new Ada.Containers.Vectors
+    (Index_Type => Natural, Element_Type => light_range);
+use Solar_Power_Vector;
+
+
 task Serwer is 
   	entry Start;
   	entry Koniec;
-  	entry We(P:LSD_Ptr);
+  	entry LSD(data:LSD_Ptr);
+	entry Added_Light_Sensor;
+	entry Deleted_Light_Sensor;
 end Serwer;
 
-procedure Add_Sensor;
+procedure Add_Light_Sensor;
 
-procedure Remove_Sensor(Id: in Natural);
+procedure Remove_Light_Sensor(Id: in Natural);
 
 procedure Run;
 
