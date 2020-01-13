@@ -43,9 +43,24 @@ task type Switch_Sensor (Id : Natural) is
 	entry Change(position:switch_range);
 end Switch_Sensor;
 
+task type Lamp (Id : Natural) is
+	entry Stop;
+	entry Get_Switch(position:switch_range);
+	entry Get_Movement(move:boolean);
+	entry Get_Light(light_level : light_range);
+	entry End_Of_Movement;
+end Lamp;
+
+task type Lamp_Bufor (Id : Natural) is
+	entry Stop;
+	entry Send(move:boolean);
+end Lamp_Bufor;
+
 type Light_Sensor_Ptr is access Light_Sensor;
 type Movement_Sensor_Ptr is access Movement_Sensor;
 type Switch_Sensor_Ptr is access Switch_Sensor;
+type Lamp_Ptr is access Lamp;
+type Lamp_Bufor_Ptr is access Lamp_Bufor;
 
 package Light_Vector is new Ada.Containers.Vectors
     (Index_Type => Natural, Element_Type => Light_Sensor_Ptr);
@@ -62,6 +77,21 @@ package Switch_Vector is new Ada.Containers.Vectors
 use Light_Vector;
 SSensors: Switch_Vector.Vector;
 
+package Solar_Power_Vector is new Ada.Containers.Vectors
+    (Index_Type => Natural, Element_Type => light_range);
+use Solar_Power_Vector;
+
+
+package Lamp_Vector is new Ada.Containers.Vectors
+    (Index_Type => Natural, Element_Type => Lamp_Ptr);
+use Lamp_Vector;
+ASensors: Lamp_Vector.Vector;
+
+package LB_Vector is new Ada.Containers.Vectors
+    (Index_Type => Natural, Element_Type => Lamp_Bufor_Ptr);
+use LB_Vector;
+LBSensors: LB_Vector.Vector;
+
 package Id_Vector is new Ada.Containers.Vectors
     (Index_Type => Natural, Element_Type => Natural);
 use Id_Vector;
@@ -69,9 +99,6 @@ Taken_L_Id: Id_Vector.Vector;
 Taken_M_Id: Id_Vector.Vector;
 Taken_S_Id: Id_Vector.Vector;
 
-package Solar_Power_Vector is new Ada.Containers.Vectors
-    (Index_Type => Natural, Element_Type => light_range);
-use Solar_Power_Vector;
 
 
 task Serwer is 

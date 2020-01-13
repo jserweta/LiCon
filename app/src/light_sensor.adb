@@ -47,6 +47,7 @@ begin
     	P.Id := Id;
 		P.Movement := true;
     	Serwer.MSD(P);
+		delay(0.1);
 	end select;
   end loop;
 end Movement_Sensor;
@@ -61,26 +62,104 @@ begin
 	or
 		accept Change(position: in switch_range) do
 			P := new Switch_Sensor_Data;
-    		P.Id := Id;
 			P.position := position;
-    		Serwer.SSD(P);
 		end Change;
+    	P.Id := Id;
+    	Serwer.SSD(P);
+		delay(0.1);
 	end select;
   end loop;
 end Switch_Sensor;
+
+task body Lamp is
+mode: switch_range := 1;
+light_intensity: light_range := 0.0;
+light_sensor_intensity: light_range := 0.0;
+movement: boolean := false;
+begin 
+  loop
+	select
+		accept Stop;
+		exit;
+	or 
+		accept Get_Switch(position : in switch_range) do
+			mode := position;
+		end Get_Switch;
+		if mode = 0 then 
+			light_intensity := 0.0;
+		elsif mode = 1 and movement = true then 
+			light_intensity := 100.0;
+		elsif mode = 1 then
+			light_intensity := light_sensor_intensity;
+		elsif mode = 2 then
+			light_intensity := 100.0;
+		end if;
+		Put_Line("moc: " & light_intensity'Img);
+	or 
+		accept Get_Movement(move: in boolean);
+			movement := true;
+			if mode = 1 then
+				light_intensity := 100.0;
+			end if;
+			Put_Line("moc: " & light_intensity'Img);
+	or 
+		accept End_Of_Movement;
+			movement := false;
+			if mode = 0 then 
+				light_intensity := 0.0;
+			elsif mode = 1 then 
+				light_intensity := light_sensor_intensity;
+			elsif mode = 2 then
+				light_intensity := 100.0;
+			end if;
+			Put_Line("moc: " & light_intensity'Img);
+	or 
+		accept Get_Light(light_level : light_range) do
+			light_sensor_intensity := light_level;
+		end Get_Light;
+		if mode = 1 and movement = false then
+			light_intensity := light_sensor_intensity;
+		elsif mode = 1 and movement = true and light_sensor_intensity > 0.0 then 
+			light_intensity := 100.0;
+		end if;
+		Put_Line("moc: " & light_intensity'Img);
+	end select;
+  end loop;
+end Lamp;
+	
+task body Lamp_Bufor is 
+klik : Lamp_Ptr;
+begin 
+  loop
+	select
+		accept Stop;
+		exit;
+	or
+		accept send(move: in boolean);
+		Put_Line("tutaj dziala inaczej");
+	or 
+		delay(20.0);
+		klik := ASensors(Id - 1);
+		klik.End_Of_Movement;
+		Put_Line("tutaj dziala jeszcze inaczej");
+	end select;
+  end loop;
+end Lamp_Bufor;
+	
 
 task body Serwer is
 light_mean : Float := 0.0;
 solar_power: Solar_Power_Vector.Vector;
 light_sensor_amount : Integer := 0;
 mode: switch_range := 1;
+light_level : light_range := 0.0;
+E: Integer;
 begin
   accept Start;
   loop
     select 
       accept LSD(data1: in LSD_Ptr) do
 	    solar_power.Append(data1.Light_Level);
-		--Put_Line("wyslano: " & data1.Light_Level'Img);
       end LSD;
 		While_Loop:
 		while Integer(solar_power.length) > light_sensor_amount loop
@@ -90,23 +169,27 @@ begin
 			light_mean := light_mean + element(e);
 		end loop;
 		light_mean := light_mean/Float(light_sensor_amount);
-		--here will be sending result to lights
+		if light_mean > 30.0 then 
+			light_level := 0.0;
+		else
+			light_level := 10.0 + 30.0 - light_mean;
+		end if;
+		for e in ASensors.Iterate loop
+			Element(e).Get_Light(light_level);
+		end loop;
     or 
 		accept MSD(data2: in MSD_Ptr) do
-			--Put_Line("wyslano: " & light_mean'Img);
-			--Put_Line("wyslano: " & data2.Id'Img);
-			if light_mean < 30.0 and mode = 1 then 
-				Put_Line("received movement: " & data2.id'Img);
-				--here will be sending result to lights
-			end if;
+			E := Taken_M_Id.Find_Index(data2.Id);
 		end MSD;
+		ASensors(E).Get_Movement(true);
+		LBSensors(E).Send(True);
 	or
 		accept SSD(data3: in SSD_Ptr) do
-			Put_Line("wyslano: " & data3.Id'Img);
-			Put_Line("wyslano: " & data3.position'Img);
-			mode := data3.position;
-			--here will be sending result to lights 
+			mode := data3.position; 
 		end SSD;
+		for e in ASensors.Iterate loop
+			element(e).Get_Switch(mode);
+		end loop;
 	or
 	    accept Added_Light_Sensor;
 			light_sensor_amount := light_sensor_amount + 1;
@@ -118,7 +201,6 @@ begin
  	   exit;
     end select;
   end loop;
-  
   Put_Line("Koniec Serwer ");
 end Serwer;
 
@@ -156,36 +238,50 @@ procedure Remove_Light_Sensor(Id: in Natural) is
 	end if;
 end Remove_Light_Sensor;
 
-procedure Add_Movement_Sensor is
+procedure Add_Lamp is
  	Id: Natural;
 	klik: Movement_Sensor_Ptr;
+	klik2: Lamp_Ptr;
+	klik3: Lamp_Bufor_Ptr;
 	begin
 	Id := 1;
 		loop
-        if not Taken_M_Id.Contains(Id) then
-            klik := new Movement_Sensor(Id);
+        if not Taken_M_Id.Contains(Id) then	
 			Taken_M_Id.Append(Id);
+            klik := new Movement_Sensor(Id);
+			klik2 := new Lamp(Id);
+			klik3 := new Lamp_Bufor(Id);
             MSensors.Append(klik);
+			ASensors.Append(klik2);
+			LBSensors.Append(klik3);
             exit;
         else  
             Id := Id + 1;  
         end if;
     	end loop;
-end Add_Movement_Sensor;
+end Add_Lamp;
 
-procedure Remove_Movement_Sensor(Id: in Natural) is
+procedure Remove_Lamp(Id: in Natural) is
 	klik: Movement_Sensor_Ptr;
+	klik2: Lamp_Ptr;
+	klik3: Lamp_Bufor_Ptr;
 	E: Integer;
 	begin
 	if Taken_M_Id.Contains(Id) then
 		E := Taken_M_Id.Find_Index(Id);
 		Put_Line("Now deleting" & Id'Img);
 		klik := MSensors(E);
+		klik2 := ASensors(E);
+		klik3 := LBSensors(E);
 		Taken_M_Id.Delete(E,1);
 		MSensors.Delete(E,1);
+		ASensors.Delete(E,1);
+		LBSensors.Delete(E,1);
 		klik.Stop;
+		klik2.Stop;
+		klik3.Stop;
 	end if;
-end Remove_Movement_Sensor;
+end Remove_Lamp;
 
 procedure Add_Switch_Sensor is
  	Id: Natural;
@@ -221,11 +317,11 @@ end Remove_Switch_Sensor;
 procedure Run is
 begin
     Serwer.Start;
-    for I in Integer range 1 .. 10 loop
+    for I in Integer range 1 .. 4 loop
 		Add_Light_Sensor;
     end loop; 
-	for I in Integer range 1 .. 10 loop
-		Add_Movement_Sensor;
+	for I in Integer range 1 .. 1 loop
+		Add_Lamp;
     end loop; 
 	Add_Switch_Sensor;
     Put_Line("Koniec_PG "); 
