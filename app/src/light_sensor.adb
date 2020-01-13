@@ -11,7 +11,6 @@ task body Light_Sensor is
 Light_Level : light_range;
 Gen: Generator;
 P : LSD_Ptr;
-Working : Boolean;
 counter : Integer := 0;
 frequency: Natural := 50;
 begin
@@ -28,7 +27,6 @@ begin
     		P.Id := Id;
     		P.Light_Level := Light_Level;
     		Serwer.LSD(P);
-    		Working := True;
 		end if;
 		delay(0.1);
 		end select;
@@ -38,8 +36,6 @@ end Light_Sensor;
 
 task body Movement_Sensor is
 P : MSD_Ptr;
-Working : Boolean;
-counter : Integer := 0;
 begin
   loop
 	select
@@ -51,16 +47,33 @@ begin
     	P.Id := Id;
 		P.Movement := true;
     	Serwer.MSD(P);
-    	Working := True;
 	end select;
   end loop;
 end Movement_Sensor;
+
+task body Switch_Sensor is
+P : SSD_Ptr;
+begin
+  loop
+	select
+		accept Stop;
+		exit;
+	or
+		accept Change(position: in switch_range) do
+			P := new Switch_Sensor_Data;
+    		P.Id := Id;
+			P.position := position;
+    		Serwer.SSD(P);
+		end Change;
+	end select;
+  end loop;
+end Switch_Sensor;
 
 task body Serwer is
 light_mean : Float := 0.0;
 solar_power: Solar_Power_Vector.Vector;
 light_sensor_amount : Integer := 0;
-counter: integer := 0;
+mode: switch_range := 1;
 begin
   accept Start;
   loop
@@ -80,12 +93,20 @@ begin
 		--here will be sending result to lights
     or 
 		accept MSD(data2: in MSD_Ptr) do
-			Put_Line("wyslano: " & light_mean'Img);
-			Put_Line("wyslano: " & data2.Id'Img);
-			if light_mean < 30.0 then 
+			--Put_Line("wyslano: " & light_mean'Img);
+			--Put_Line("wyslano: " & data2.Id'Img);
+			if light_mean < 30.0 and mode = 1 then 
 				Put_Line("received movement: " & data2.id'Img);
+				--here will be sending result to lights
 			end if;
 		end MSD;
+	or
+		accept SSD(data3: in SSD_Ptr) do
+			Put_Line("wyslano: " & data3.Id'Img);
+			Put_Line("wyslano: " & data3.position'Img);
+			mode := data3.position;
+			--here will be sending result to lights 
+		end SSD;
 	or
 	    accept Added_Light_Sensor;
 			light_sensor_amount := light_sensor_amount + 1;
@@ -166,6 +187,37 @@ procedure Remove_Movement_Sensor(Id: in Natural) is
 	end if;
 end Remove_Movement_Sensor;
 
+procedure Add_Switch_Sensor is
+ 	Id: Natural;
+	klik: Switch_Sensor_Ptr;
+	begin
+	Id := 1;
+		loop
+        if not Taken_S_Id.Contains(Id) then
+            klik := new Switch_Sensor(Id);
+			Taken_S_Id.Append(Id);
+            SSensors.Append(klik);
+            exit;
+        else  
+            Id := Id + 1;  
+        end if;
+    	end loop;
+end Add_Switch_Sensor;
+
+procedure Remove_Switch_Sensor(Id: in Natural) is
+	klik: Switch_Sensor_Ptr;
+	E: Integer;
+	begin
+	if Taken_S_Id.Contains(Id) then
+		E := Taken_S_Id.Find_Index(Id);
+		Put_Line("Now deleting" & Id'Img);
+		klik := SSensors(E);
+		Taken_S_Id.Delete(E,1);
+		SSensors.Delete(E,1);
+		klik.Stop;
+	end if;
+end Remove_Switch_Sensor;
+
 procedure Run is
 begin
     Serwer.Start;
@@ -175,6 +227,7 @@ begin
 	for I in Integer range 1 .. 10 loop
 		Add_Movement_Sensor;
     end loop; 
+	Add_Switch_Sensor;
     Put_Line("Koniec_PG "); 
 
 end Run;
