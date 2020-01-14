@@ -1,19 +1,10 @@
 with Ada.Text_IO;
 use Ada.Text_IO;
-with Ada.Float_Text_IO;
-use Ada.Float_Text_IO;
-
-with Ada.Calendar;
-use Ada.Calendar;
-with Ada.Numerics.Float_Random;
 
 with Ada.Strings;
 use Ada.Strings;
 with Ada.Strings.Fixed;
 use Ada.Strings.Fixed;
-
-with Ada.Exceptions;
-use Ada.Exceptions;
 
 package body Panel is
   
