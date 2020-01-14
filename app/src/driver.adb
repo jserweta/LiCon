@@ -12,6 +12,7 @@ begin
 	elem2 := Light_sensor.SSensors.Element(0);
 	elem1 := Light_sensor.MSensors.Element(2);
 	delay(3.0);
+	Light_sensor.Add_Lamp;
 	elem2.Change(2);
 	delay(1.0);
 	elem1.Movement;
@@ -21,6 +22,10 @@ begin
 	elem2.Change(1);
 	delay(2.0);
 	elem1.Movement;
+	Light_sensor.Remove_Lamp(5);
+	delay(7.0);
+	Light_sensor.Add_Lamp;
+	Light_sensor.Add_Lamp;
 	--delay(2.3);
 	--elem2.Change(0);
 	--delay(2.3);
