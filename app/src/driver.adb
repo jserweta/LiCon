@@ -10,7 +10,7 @@ elem2: Light_sensor.Switch_Sensor_Ptr;
 begin
 	Light_sensor.Run;
 	elem2 := Light_sensor.SSensors.Element(0);
-	elem1 := Light_sensor.MSensors.Element(0);
+	elem1 := Light_sensor.MSensors.Element(2);
 	delay(3.0);
 	elem2.Change(2);
 	delay(1.0);

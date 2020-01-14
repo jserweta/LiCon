@@ -1,11 +1,9 @@
 with Ada.Text_IO, Ada.Numerics.Float_Random, Ada.Numerics.Elementary_Functions;
 use Ada.Text_IO, Ada.Numerics.Float_Random;
 with Ada.Containers.Vectors;
+with Panel; pragma Unreferenced(Panel);
 
-
-package body Light_sensor is
-		
-work : Boolean:= False;
+package body Light_sensor is		
 
 task body Light_Sensor is
 Light_Level : light_range;
@@ -94,14 +92,14 @@ begin
 		elsif mode = 2 then
 			light_intensity := 100.0;
 		end if;
-		Put_Line("moc: " & light_intensity'Img);
+		Panel.Update(Id, light_intensity);
 	or 
 		accept Get_Movement(move: in boolean);
 			movement := true;
 			if mode = 1 then
 				light_intensity := 100.0;
 			end if;
-			Put_Line("moc: " & light_intensity'Img);
+			Panel.Update(Id, light_intensity);
 	or 
 		accept End_Of_Movement;
 			movement := false;
@@ -112,7 +110,7 @@ begin
 			elsif mode = 2 then
 				light_intensity := 100.0;
 			end if;
-			Put_Line("moc: " & light_intensity'Img);
+			Panel.Update(Id, light_intensity);
 	or 
 		accept Get_Light(light_level : light_range) do
 			light_sensor_intensity := light_level;
@@ -122,7 +120,7 @@ begin
 		elsif mode = 1 and movement = true and light_sensor_intensity > 0.0 then 
 			light_intensity := 100.0;
 		end if;
-		Put_Line("moc: " & light_intensity'Img);
+		Panel.Update(Id, light_intensity);
 	end select;
   end loop;
 end Lamp;
@@ -136,12 +134,10 @@ begin
 		exit;
 	or
 		accept send(move: in boolean);
-		Put_Line("tutaj dziala inaczej");
 	or 
 		delay(20.0);
 		klik := ASensors(Id - 1);
 		klik.End_Of_Movement;
-		Put_Line("tutaj dziala jeszcze inaczej");
 	end select;
   end loop;
 end Lamp_Bufor;
@@ -314,18 +310,23 @@ procedure Remove_Switch_Sensor(Id: in Natural) is
 	end if;
 end Remove_Switch_Sensor;
 
+task body Panel_Thread is
+	begin
+	accept Start;
+	Panel.Run;
+end Panel_Thread;
+
 procedure Run is
 begin
+	Panel_Thread.Start;
     Serwer.Start;
     for I in Integer range 1 .. 4 loop
 		Add_Light_Sensor;
     end loop; 
-	for I in Integer range 1 .. 1 loop
+	for I in Integer range 1 .. 10 loop
 		Add_Lamp;
     end loop; 
 	Add_Switch_Sensor;
-    Put_Line("Koniec_PG "); 
-
 end Run;
 end Light_sensor;
 	  	

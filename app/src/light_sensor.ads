@@ -117,4 +117,8 @@ procedure Remove_Light_Sensor(Id: in Natural);
 
 procedure Run;
 
+task Panel_Thread is
+	entry Start;
+end Panel_Thread;
+
 end Light_Sensor;
