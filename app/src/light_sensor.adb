@@ -96,7 +96,7 @@ begin
 	or 
 		accept Get_Movement(move: in boolean);
 			movement := true;
-			if mode = 1 then
+			if mode = 1 and light_sensor_intensity > 0.0 then
 				light_intensity := 100.0;
 			end if;
 			Panel.Update(Id, light_intensity);
@@ -119,6 +119,8 @@ begin
 			light_intensity := light_sensor_intensity;
 		elsif mode = 1 and movement = true and light_sensor_intensity > 0.0 then 
 			light_intensity := 100.0;
+		elsif mode = 1 and movement = true and light_sensor_intensity = 0.0 then 
+			light_intensity := 0.0;
 		end if;
 		Panel.Update(Id, light_intensity);
 	end select;
@@ -265,7 +267,6 @@ procedure Remove_Lamp(Id: in Natural) is
 	begin
 	if Taken_M_Id.Contains(Id) then
 		E := Taken_M_Id.Find_Index(Id);
-		Put_Line("Now deleting" & Id'Img);
 		klik := MSensors(E);
 		klik2 := ASensors(E);
 		klik3 := LBSensors(E);
@@ -275,6 +276,7 @@ procedure Remove_Lamp(Id: in Natural) is
 		LBSensors.Delete(E,1);
 		klik.Stop;
 		klik2.Stop;
+		Panel.Remove(Id);
 		klik3.Stop;
 	end if;
 end Remove_Lamp;

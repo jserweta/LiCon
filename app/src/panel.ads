@@ -13,5 +13,6 @@ end Ekran;
 procedure Run;
 
 procedure Update(Id : Natural; Power : float);
+procedure Remove(Id : Natural);
 
 end panel;

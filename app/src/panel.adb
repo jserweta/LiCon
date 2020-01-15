@@ -44,6 +44,10 @@ procedure Update(Id : Natural; Power : float) is
 	Ekran.Pisz_XY(1,Id+1,"lampa nr: " & Id'Img & ", Moc: " & Power'Img);
 end Update;
 
+procedure Remove(Id : Natural) is
+	begin 
+	Ekran.Pisz_XY(1,Id+1,"                                                                 ");
+end Remove;            
 procedure Run is 
 begin
   -- inicjowanie
