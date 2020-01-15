@@ -267,7 +267,6 @@ procedure Remove_Lamp(Id: in Natural) is
 	begin
 	if Taken_M_Id.Contains(Id) then
 		E := Taken_M_Id.Find_Index(Id);
-		Put_Line("Now deleting" & Id'Img);
 		klik := MSensors(E);
 		klik2 := ASensors(E);
 		klik3 := LBSensors(E);
@@ -277,6 +276,7 @@ procedure Remove_Lamp(Id: in Natural) is
 		LBSensors.Delete(E,1);
 		klik.Stop;
 		klik2.Stop;
+		Panel.Remove(Id);
 		klik3.Stop;
 	end if;
 end Remove_Lamp;

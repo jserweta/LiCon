@@ -115,6 +115,10 @@ procedure Add_Light_Sensor;
 
 procedure Remove_Light_Sensor(Id: in Natural);
 
+procedure Add_Lamp;
+
+procedure Remove_Lamp(Id : Natural);
+
 procedure Run;
 
 task Panel_Thread is
